@@ -57,6 +57,8 @@ Three wires, that's it:
 
 Espressif does have their own official face-detection library, but it's built for a different, more complicated build system (ESP-IDF directly) that doesn't mesh cleanly with the simpler Arduino-style setup we've used all day. Instead, this project uses a community library, **EloquentEsp32Cam**, which wraps the same underlying AI models in an Arduino-friendly package.
 
+The actual model doing the work is Espressif's own on-device face detector from their **ESP-WHO / esp-face** component — a lightweight, MTCNN-derived cascaded neural network (sometimes called MTMN: multi-task cascaded network) built specifically to run within the ESP32-S3's limited memory and compute. It's a pretrained model, not something trained from scratch for this project — `detection.accurate()` just switches it from a fast single-stage pass to a slower two-stage pass (proposal + refine), which is what took the confidence scores from 0.10–0.15 up to 0.96–1.00 (see Bug 1 below).
+
 ```cpp
 camera.pinout.freenove_s3();
 camera.resolution.face();
