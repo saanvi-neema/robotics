@@ -87,6 +87,12 @@ Notice TX connects to RX and vice versa (this is normal for serial connections �
 
 This board should have its **own** power supply (a USB power bank, or a phone charger), separate from the Mega/motor/chassis battery pack. Motors and motor drivers are electrically "noisy" and can cause voltage dips that would reset or confuse a camera+AI chip sharing the same power. Only the ground wire needs to be shared between the two systems.
 
+## Live debug view (optional)
+
+`ENABLE_WEB_VIEWER` is on by default, same idea as `esp32_face_servo`'s demo page: connects to WiFi and hosts a page at `http://<board-ip>:82` showing a refreshing camera image, a green box around any detected face, and — specific to this project — **which command is currently being sent to the Mega** (`F` or `S`). Useful for confirming the camera/detection side is actually working when the car itself isn't moving: if the page shows "Sending: F" but the car still isn't driving, the problem is downstream (Mega/shield/motor wiring), not the ESP32.
+
+The board's IP address is printed over `Serial` (the USB debug connection) right after it connects to WiFi. Set `ENABLE_WEB_VIEWER` to `0` for fully standalone operation with no WiFi at all.
+
 ## Hardware needed
 
 - Freenove ESP32-S3 CAM board
