@@ -12,6 +12,37 @@ They're separate boards because an Arduino Motor Shield physically plugs onto an
 
 The ESP32-S3 is great at running a camera and AI model, but has very few genuinely free GPIO pins left once the camera uses most of them (see the pinout table in the top-level `esp32/README.md`). The Mega has tons of free pins and is exactly what the Motor Shield expects. Rather than force one chip to do a job it's awkward at, we let each board do what it's good at, and connect them with a simple 3-wire serial link.
 
+## The full picture: how all three pieces connect
+
+There are three separate physical things in this project, and it helps to see how they all plug into each other before wiring anything:
+
+1. **This board (`esp32_face_car`)** — camera + face detection, decides forward/stop
+2. **The Arduino Mega 2560**, with the **Arduino Motor Shield Rev3** plugged directly on top of it — receives the decision, drives the motors
+3. **The car chassis's two DC gear motors** (left wheel, right wheel) — wired into the Motor Shield's two motor screw terminals
+
+```
+                    ESP32-S3 CAM board                       Arduino Mega 2560
+                    (esp32_face_car)                         + Motor Shield Rev3 on top
+                    -- own power supply --
+                 ┌───────────────────────┐                ┌────────────────────────────┐
+                 │  GPIO21 (TX)      ●────┼────────────────┼──►  Pin 19 (RX1)            │
+                 │  GPIO14 (RX)      ●◄───┼────────────────┼───  Pin 18 (TX1)            │
+                 │  GND              ●────┼────────────────┼───  GND (shared)            │
+                 └───────────────────────┘                │                             │
+                                                            │  Shield Motor A terminal ───┼──► Left wheel motor
+                                                            │  Shield Motor B terminal ───┼──► Right wheel motor
+                                                            │                             │
+                                                            │  Power in  ◄────────────────┼──  Chassis battery pack
+                                                            └────────────────────────────┘
+```
+
+What each connection is actually for:
+- **Serial link (3 wires, ESP32 ↔ Mega)** — the only connection between the "brain" and the "muscle." TX on one side always wires to RX on the other, and both GNDs must be tied together so the two boards share an electrical reference point. Exact pins are in the table below.
+- **Motor Shield → motors** — the screw terminals you've been wiring connect directly to the two DC gear motors. Motor A drives one wheel, Motor B drives the other. If a wheel spins the "wrong" way once you test it, that's a quick fix (swap that motor's two wires, or flip `HIGH`/`LOW` in code) — see `mega_motor_control`'s Calibration section, not a wiring mistake.
+- **Power — two separate supplies, one shared ground** — the ESP32 gets its own USB power bank/phone charger. The Mega + shield + both motors run off the chassis's battery pack. These two power systems connect to each other **only** through that single shared GND wire in the serial link — motors are electrically noisy, and keeping power separate avoids that noise resetting or glitching the camera board.
+
+For the complete pin-by-pin build notes on the Mega/motor side (exact screw terminal pins, calibration, safety timeout), see [`mega_motor_control`](../../arduino_mega/mega_motor_control/README.md).
+
 ## How it works, step by step
 
 1. Camera captures a 240×240 photo.
